@@ -1,6 +1,6 @@
 [Core]
 Name = SecondLife
-Module = secondlife
+Module = err-secondlife
     
 [Documentation]
 Description = Integrating your Second Life into Err
