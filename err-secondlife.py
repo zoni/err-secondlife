@@ -15,6 +15,12 @@
 import logging
 
 from errbot import BotPlugin, botcmd
+
+# Hack to ensure we can import secondlife
+from sys import path
+from os.path import dirname, realpath
+path.append(dirname(realpath(__file__)))
+
 from secondlife import MySecondLife
 
 class SecondLife(BotPlugin):
