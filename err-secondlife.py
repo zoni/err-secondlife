@@ -40,6 +40,7 @@ class SecondLife(BotPlugin):
 
     @botcmd(split_args_with=None)
     def secondlife_friends(self, mess, args):
+        """Tells you which of your friends are currently online"""
         friends = self.mysl.friends_online()
         return str("You currently have {} friends online:\n{}".format(len(friends),
             "\n".join(friends).encode('utf-8', 'ignore')))

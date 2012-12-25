@@ -26,6 +26,12 @@ class SigninError(MySecondLifeError):
 
 
 class MySecondLife(object):
+    """A wrapper around the SecondLife account pages (https://secondlife.com/my/account/)
+
+    Because SecondLife offers no API to a lot of the account-related data, we have
+    to make do with ugly html scraping that's bound to break horribly whenever
+    Linden Lab changes something.
+    """
     username = None
     password = None
 
@@ -37,7 +43,9 @@ class MySecondLife(object):
         self._request_page('http://secondlife.com/my/account/') # Ensures we're logged in
 
     def _request_page(self, url):
-        """Requests an account-protected page"""
+        """Requests an account-protected page
+
+        Will perform a sign in if not yet signed in"""
         br = self.br
         br.open(url)
         if br.title() == "OpenId transaction in progress":
@@ -64,6 +72,7 @@ class MySecondLife(object):
         return BeautifulSoup(br.response().read())
 
     def _extract_friends_from_html_soup(self, soup):
+        """Extract online friends from the html of the friends-online page"""
         friends = []
         friendsoup = soup.find_all("div", class_="main-content-body")
         assert len(friendsoup) == 1
@@ -75,6 +84,7 @@ class MySecondLife(object):
         return friends
 
     def friends_online(self):
+        """Return a list of online friends"""
         html = self._request_page("https://secondlife.com/my/account/friends.php?")
         assert html.title.string == "Friends Online | Second Life"
         return self._extract_friends_from_html_soup(html)
