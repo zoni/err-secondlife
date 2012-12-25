@@ -20,81 +20,86 @@ import logging
 from bs4 import BeautifulSoup
 
 class MySecondLifeError(Exception):
-	pass
+    pass
+
 
 class SigninError(MySecondLifeError):
-	pass
+    pass
+
 
 class MySecondLife(object):
-	username = None
-	password = None
+    username = None
+    password = None
 
-	def __init__(self, username, password):
-		self.username = username
-		self.password = password
-		self.br = mechanize.Browser()
-		self.br.set_handle_robots(False) # Required because SL blocks robots
-		self._request_page('http://secondlife.com/my/account/') # Ensures we're logged in
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+        self.br = mechanize.Browser()
+        self.br.set_handle_robots(False) # Required because SL blocks robots
+        self._request_page('http://secondlife.com/my/account/') # Ensures we're logged in
 
-	def _request_page(self, url):
-		"""Requests an account-protected page"""
-		br = self.br
-		br.open(url)
-		if br.title() == "OpenId transaction in progress":
-			br.select_form(nr=0)
-			br.submit()
-		if br.title() == "Second Life: Sign In":
-			br.select_form(nr=0)
-			br['username'] = self.username
-			br['password'] = self.password
-			br.submit()
-			assert br.title() == "OpenId transaction in progress" or br.title() == "Second Life: Sign In"
-			if br.title() == "Second Life: Sign In":
-				try:
-					soup = BeautifulSoup(br.response().read())
-					errormsg = [s for s in soup.find_all("div", class_="error")[0].strings]
-					error = " ".join(["Sign in failed with the following error:"] + errormsg)
-				except Exception as e:
-					logging.exception(e)
-					error = "Expected an OpenId transaction, but ended back up at the sign in form and couldn't locate an error message"
-				raise SigninError(error)
-			br.select_form(nr=0)
-			br.submit()
-		return br.response().read()
+    def _request_page(self, url):
+        """Requests an account-protected page"""
+        br = self.br
+        br.open(url)
+        if br.title() == "OpenId transaction in progress":
+            br.select_form(nr=0)
+            br.submit()
+        if br.title() == "Second Life: Sign In":
+            br.select_form(nr=0)
+            br['username'] = self.username
+            br['password'] = self.password
+            br.submit()
+            assert br.title() == "OpenId transaction in progress" or br.title() == "Second Life: Sign In"
+            if br.title() == "Second Life: Sign In":
+                try:
+                    soup = BeautifulSoup(br.response().read())
+                    errormsg = [s for s in soup.find_all("div", class_="error")[0].strings]
+                    error = " ".join(["Sign in failed with the following error:"] + errormsg)
+                except Exception as e:
+                    logging.exception(e)
+                    error = ("Expected an OpenId transaction, but ended back up at the "
+                             "sign in form and couldn't locate an error message")
+                raise SigninError(error)
+            br.select_form(nr=0)
+            br.submit()
+        return br.response().read()
 
-	def _extract_friends_from_html(self, html):
-		friends = []
-		soup = BeautifulSoup(html)
-		friendsoup = soup.find_all("div", class_="main-content-body")
-		assert len(friendsoup) == 1
-		friendsoup = friendsoup[0].find_all("li")
-		for spoonful in friendsoup:
-			strings = [s for s in spoonful.strings]
-			logging.debug("Found friend {}".format(strings))
-			friends.append(" ".join(strings))
-		return friends
+    def _extract_friends_from_html(self, html):
+        friends = []
+        soup = BeautifulSoup(html)
+        friendsoup = soup.find_all("div", class_="main-content-body")
+        assert len(friendsoup) == 1
+        friendsoup = friendsoup[0].find_all("li")
+        for spoonful in friendsoup:
+            strings = [s for s in spoonful.strings]
+            logging.debug("Found friend {}".format(strings))
+            friends.append(" ".join(strings))
+        return friends
 
-	def friends_online(self):
-		html = self._request_page("https://secondlife.com/my/account/friends.php?")
-		assert self.br.title() == "Friends Online | Second Life"
-		return self._extract_friends_from_html(html)
+    def friends_online(self):
+        html = self._request_page("https://secondlife.com/my/account/friends.php?")
+        assert self.br.title() == "Friends Online | Second Life"
+        return self._extract_friends_from_html(html)
+
 
 class SecondLife(BotPlugin):
-	"""Integrating your Second Life into Err"""
-	min_err_version = '1.6.0' # Optional, but recommended
-	max_err_version = '1.7.0' # Optional, but recommended
+    """Integrating your Second Life into Err"""
+    min_err_version = '1.6.0' # Optional, but recommended
+    max_err_version = '1.7.0' # Optional, but recommended
 
-	def activate(self):
-		if not self.config or not set(self.config).issuperset(set(("USERNAME", "PASSWORD"))):
-			logging.info("SecondLife plugin not configured, aborting activation")
-		else:
-			self.mysl = MySecondLife(self.config['USERNAME'], self.config['PASSWORD'])
-			super(SecondLife, self).activate()
+    def activate(self):
+        if not self.config or not set(self.config).issuperset(set(("USERNAME", "PASSWORD"))):
+            logging.info("SecondLife plugin not configured, aborting activation")
+        else:
+            self.mysl = MySecondLife(self.config['USERNAME'], self.config['PASSWORD'])
+            super(SecondLife, self).activate()
 
-	def get_configuration_template(self):
-		return {'USERNAME': "some.resident", 'PASSWORD': "secret"}
+    def get_configuration_template(self):
+        return {'USERNAME': "some.resident", 'PASSWORD': "secret"}
 
-	@botcmd(split_args_with=None)
-	def secondlife_friends(self, mess, args):
-		friends = self.mysl.friends_online()
-		return str("You currently have {} friends online:\n{}".format(len(friends), "\n".join(friends).encode('utf-8', 'ignore')))
+    @botcmd(split_args_with=None)
+    def secondlife_friends(self, mess, args):
+        friends = self.mysl.friends_online()
+        return str("You currently have {} friends online:\n{}".format(len(friends),
+            "\n".join(friends).encode('utf-8', 'ignore')))
