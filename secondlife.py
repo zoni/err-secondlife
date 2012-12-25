@@ -61,11 +61,10 @@ class MySecondLife(object):
                 raise SigninError(error)
             br.select_form(nr=0)
             br.submit()
-        return br.response().read()
+        return BeautifulSoup(br.response().read())
 
-    def _extract_friends_from_html(self, html):
+    def _extract_friends_from_html_soup(self, soup):
         friends = []
-        soup = BeautifulSoup(html)
         friendsoup = soup.find_all("div", class_="main-content-body")
         assert len(friendsoup) == 1
         friendsoup = friendsoup[0].find_all("li")
@@ -77,5 +76,5 @@ class MySecondLife(object):
 
     def friends_online(self):
         html = self._request_page("https://secondlife.com/my/account/friends.php?")
-        assert self.br.title() == "Friends Online | Second Life"
-        return self._extract_friends_from_html(html)
+        assert html.title.string == "Friends Online | Second Life"
+        return self._extract_friends_from_html_soup(html)
