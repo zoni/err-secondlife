@@ -40,7 +40,7 @@ class MySecondLife(object):
         self.password = password
         self.br = mechanize.Browser()
         self.br.set_handle_robots(False) # Required because SL blocks robots
-        self._request_page('http://secondlife.com/my/account/') # Ensures we're logged in
+        self._request_page('http://secondlife.com/my/account/') # Ensure we're logged in
 
     def _request_page(self, url):
         """Requests an account-protected page
