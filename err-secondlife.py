@@ -26,7 +26,7 @@ from secondlife import MySecondLife
 class SecondLife(BotPlugin):
     """Integrating your Second Life into Err"""
     min_err_version = '1.6.0' # Optional, but recommended
-    max_err_version = '1.7.0' # Optional, but recommended
+    max_err_version = '1.7.1' # Optional, but recommended
 
     def activate(self):
         if not self.config or not set(self.config).issuperset(set(("USERNAME", "PASSWORD"))):
